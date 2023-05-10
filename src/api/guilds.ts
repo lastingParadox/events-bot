@@ -5,9 +5,9 @@ import { bot } from "../main.js";
 
 @Router()
 export class API {
-  @Get("/")
-  index(context: Context): void {
-    context.body = `
+    @Get("/")
+    index(context: Context): void {
+        context.body = `
       <div style="text-align: center">
         <h1>
           <a href="https://discordx.js.org">discord.ts</a> rest api server example
@@ -18,13 +18,16 @@ export class API {
         </p>
       </div>
     `;
-  }
+    }
 
-  @Get()
-  guilds(context: Context): void {
-    const guilds = bot.guilds.cache.map((guild) => ( { id: guild.id, name: guild.name } ) );
-    context.body = {
-        guilds
-    };
-  }
+    @Get()
+    guilds(context: Context): void {
+        const guilds = bot.guilds.cache.map((guild) => ({
+            id: guild.id,
+            name: guild.name,
+        }));
+        context.body = {
+            guilds,
+        };
+    }
 }
