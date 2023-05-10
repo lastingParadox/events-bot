@@ -22,6 +22,9 @@ export class API {
 
   @Get()
   guilds(context: Context): void {
-    context.body = `${bot.guilds.cache.map((g) => `${g.id}: ${g.name}\n`)}`;
+    const guilds = bot.guilds.cache.map((guild) => ( { id: guild.id, name: guild.name } ) );
+    context.body = {
+        guilds
+    };
   }
 }

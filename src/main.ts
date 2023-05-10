@@ -1,8 +1,12 @@
 import { dirname, importx } from "@discordx/importer";
 import { Koa } from "@discordx/koa";
 import type { Interaction, Message } from "discord.js";
-import { IntentsBitField } from "discord.js";
+import { IntentsBitField, Partials } from "discord.js";
 import { Client } from "discordx";
+import dotenv from 'dotenv';
+import mongoose from "mongoose";
+
+dotenv.config();
 
 export const bot = new Client({
   // To use only guild command
@@ -14,10 +18,11 @@ export const bot = new Client({
     IntentsBitField.Flags.GuildMembers,
     IntentsBitField.Flags.GuildMessages,
     IntentsBitField.Flags.GuildMessageReactions,
+    IntentsBitField.Flags.GuildScheduledEvents,
     IntentsBitField.Flags.GuildVoiceStates,
     IntentsBitField.Flags.MessageContent,
   ],
-
+  partials: [Partials.Message, Partials.Channel, Partials.Reaction],
   // Debug logs are disabled in silent mode
   silent: false,
 
@@ -53,6 +58,10 @@ bot.on("messageCreate", (message: Message) => {
   bot.executeCommand(message);
 });
 
+bot.on("messageReactionAdd", (reaction, user) => {
+  bot.executeReaction(reaction, user);
+})
+
 async function run() {
   // The following syntax should be used in the commonjs environment
   //
@@ -67,11 +76,16 @@ async function run() {
   if (!process.env.BOT_TOKEN) {
     throw Error("Could not find BOT_TOKEN in your environment");
   }
+  else if (!process.env.MONGO_URI) {
+    throw Error("Could not find MONGO_URI in your environment");
+  }
 
   // Log in with your bot token
   await bot.login(process.env.BOT_TOKEN);
 
   // ************* rest api section: start **********
+
+  mongoose.connect(process.env.MONGO_URI);
 
   // api: prepare server
   const server = new Koa();
