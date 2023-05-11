@@ -1,4 +1,5 @@
 import {
+    ChannelType,
     GuildScheduledEventEntityType,
     MessageReaction,
     User,
@@ -19,6 +20,11 @@ export class MessageReact {
         const event = json[0];
 
         if (json.length > 0) {
+
+            if (user.id === event.authorId) {
+                await reaction.message
+            }
+
             const discordEvent =
                 await reaction.message.guild?.scheduledEvents.create({
                     name: event.title,
@@ -29,10 +35,20 @@ export class MessageReact {
                     privacyLevel: 2,
                     entityMetadata: { location: "Default Location" },
                 });
-            const link = await discordEvent?.createInviteURL({
-                channel: reaction.message.channel.id,
-                maxAge: 0,
-            });
+            
+            let link;
+            if (reaction.message.channel.type === ChannelType.PublicThread || reaction.message.channel.type === ChannelType.PrivateThread) {
+                link = await discordEvent?.createInviteURL({
+                    channel: reaction.message.channel.parent?.id,
+                    maxAge: 0,
+                });
+            }
+            else {
+                link = await discordEvent?.createInviteURL({
+                    channel: reaction.message.channel.id,
+                    maxAge: 0,
+                });
+            }
             await reaction.message.channel.send(
                 `Successfully created event ${event.title}!\n${link as string}`
             );
