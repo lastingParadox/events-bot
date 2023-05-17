@@ -1,7 +1,6 @@
 import { Get, Post, Delete, Router, Middleware } from "@discordx/koa";
 import type { Context } from "koa";
 import Message, { IMessage } from "../schemas/message.js";
-import mongoose from "mongoose";
 import { koaBody } from "koa-body";
 
 @Router()

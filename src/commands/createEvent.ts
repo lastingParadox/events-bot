@@ -10,11 +10,15 @@ import {
 } from "discord.js";
 import { Discord, ModalComponent, Slash } from "discordx";
 import dayjs from "dayjs";
+import getOrCreateGuild from "../bin/getCreateGuild.js";
 
 @Discord()
 export class EventCommand {
     @Slash({ description: "modal", name: "create-event" })
-    modal(interaction: CommandInteraction): void {
+    async modal(interaction: CommandInteraction): Promise<void> {
+        // In case the guild was not created in the database already, create the guild
+        getOrCreateGuild(interaction.guild?.id);
+
         const modal = new ModalBuilder()
             .setTitle("Create an Event")
             .setCustomId("createEventModal");
@@ -71,7 +75,7 @@ export class EventCommand {
 
         modal.addComponents(row1, row2, row3, row4, row5);
 
-        interaction.showModal(modal);
+        await interaction.showModal(modal);
     }
 
     @ModalComponent()
@@ -88,8 +92,8 @@ export class EventCommand {
 
         if (!startTime.isValid()) {
             await interaction.reply({
-                content:
-                    "The starting date must be a valid date in the similar to the formatted example `12/10/01` (`M/DD/YY`).\nThe starting time must be a valid time similar to the formatted exmaple `12:01 AM` (`h:mm A`)",
+                content: `The starting date must be a valid date in the similar to the formatted example \`12/10/01\` (\`M/DD/YY\`).
+                    The starting time must be a valid time similar to the formatted exmaple \`12:01 AM\` (\`h:mm A\`)`,
                 ephemeral: true,
             });
             return;
@@ -134,9 +138,6 @@ export class EventCommand {
                 .add(Math.trunc((timeLength % 1) * 60), "minute");
         else endTime = startTime.add(timeLength, "hour");
 
-        console.log(startTime.format("MM/DD/YYYY"));
-        console.log(endTime.format("MM/DD/YYYY"));
-
         const member = interaction.member as GuildMember;
 
         const embed = new EmbedBuilder()
@@ -161,7 +162,6 @@ export class EventCommand {
         await interaction.reply({ embeds: [embed] });
 
         const message = await interaction.fetchReply();
-        console.log(message.id);
 
         const response = await fetch("http://localhost:3000/messages", {
             method: "POST",
@@ -176,8 +176,9 @@ export class EventCommand {
             }),
         });
 
-        console.log(await response.json());
+        const eventJson = await response.json();
+        console.log(`Created Event ${eventJson.title} in guild ${interaction.guild?.id}`);
 
-        message.react("✅");
+        await message.react("✅");
     }
 }
