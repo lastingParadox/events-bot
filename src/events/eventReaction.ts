@@ -7,7 +7,6 @@ import {
 import { Discord, Reaction } from "discordx";
 import dayjs from "dayjs";
 import getOrCreateGuild from "../bin/getCreateGuild.js";
-import { bot } from "../main.js";
 
 @Discord()
 export class MessageReact {
@@ -67,7 +66,7 @@ export class MessageReact {
             maxAge: 0,
         });
 
-        const userArray: string[] = [];
+        const userArray: string[] = [ `<@${event.author}>` ];
         reaction.message.reactions.resolve("✅")?.users.cache.each((user) => {
             if (!user.bot && userArray.length < 10) userArray.push(`<@${user.id}>`);
         })
