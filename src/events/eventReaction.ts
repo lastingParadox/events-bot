@@ -7,11 +7,15 @@ import {
 import { Discord, Reaction } from "discordx";
 import dayjs from "dayjs";
 import getOrCreateGuild from "../bin/getCreateGuild.js";
+import { bot } from "../main.js";
 
 @Discord()
-export class MessageReact {
+export class EventReact {
     @Reaction({ aliases: ["white_check_mark"], emoji: "✅" })
-    async reactRespond(reaction: MessageReaction, user: User): Promise<void> {
+    async eventInterested(
+        reaction: MessageReaction,
+        user: User
+    ): Promise<void> {
         if (user.bot) return;
 
         const guild = getOrCreateGuild(reaction.message.guild?.id);
@@ -20,7 +24,7 @@ export class MessageReact {
             `http://localhost:3000/messages/${reaction.message.id}`
         );
         let json = await response.json();
-        const event = json[0];
+        let event = json[0];
 
         if (typeof event === "undefined") return;
 
@@ -28,7 +32,9 @@ export class MessageReact {
             await user.send(
                 `You cannot react to your own event submission!\nEvent: ${event.title}`
             );
-            await reaction.message.reactions.resolve("✅")?.users.remove(user.id);
+            await reaction.message.reactions
+                .resolve("✅")
+                ?.users.remove(user.id);
             return;
         }
 
@@ -36,7 +42,8 @@ export class MessageReact {
         // Accounting for the bot reaction...
         numReactions = numReactions - 1;
 
-        const guildReactionCount = await guild.then((guild) => guild?.numReactions) || 1;
+        const guildReactionCount =
+            (await guild.then((guild) => guild?.numReactions)) || 1;
 
         if (numReactions < guildReactionCount) return;
 
@@ -66,13 +73,16 @@ export class MessageReact {
             maxAge: 0,
         });
 
-        const userArray: string[] = [ `<@${event.author}>` ];
+        const userArray: string[] = [`<@${event.authorId}>`];
         reaction.message.reactions.resolve("✅")?.users.cache.each((user) => {
-            if (!user.bot && userArray.length < 10) userArray.push(`<@${user.id}>`);
-        })
+            if (!user.bot && userArray.length < 10)
+                userArray.push(`<@${user.id}>`);
+        });
 
         await reaction.message.channel.send(
-            `Successfully created event ${event.title}!\n${userArray.join(" ")}\n${link as string}`
+            `Successfully created event ${event.title}!\n${userArray.join(
+                " "
+            )}\n${link as string}`
         );
 
         await reaction.message.delete();
@@ -82,6 +92,49 @@ export class MessageReact {
             { method: "DELETE" }
         );
 
-        console.log(await response.json());
+        event = await response.json();
+
+        console.log(
+            `Removed event suggestion ${event.title} in guild ${
+                reaction.message.guild?.id || ""
+            }`
+        );
+    }
+
+    @Reaction({ aliases: ["x"], emoji: "❌" })
+    async eventDelete(reaction: MessageReaction, user: User): Promise<void> {
+        if (user.id === bot.user?.id) return;
+
+        let response = await fetch(
+            `http://localhost:3000/messages/${reaction.message.id}`
+        );
+        let json = await response.json();
+        let event = json[0];
+
+        if (typeof event === "undefined") return;
+
+        if (user.id !== event.authorId) {
+            await reaction.message.reactions
+                .resolve("❌")
+                ?.users.remove(user.id);
+            return;
+        }
+
+        await reaction.message.delete();
+
+        response = await fetch(
+            `http://localhost:3000/messages/${reaction.message.id}`,
+            {
+                method: "DELETE",
+            }
+        );
+        event = await response.json();
+        console.log(event);
+
+        console.log(
+            `Deleted event ${event.title} in guild ${
+                reaction.message.guild?.id || ""
+            }`
+        );
     }
 }
