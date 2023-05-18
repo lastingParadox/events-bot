@@ -1,6 +1,8 @@
 import { IGuild } from "../schemas/guild.js";
 
-export default async function getOrCreateGuild(guildId: string | undefined) : Promise<IGuild | undefined> {
+export default async function getOrCreateGuild(
+    guildId: string | undefined
+): Promise<IGuild | undefined> {
     if (guildId == undefined) return undefined;
 
     let response = await fetch(`http://localhost:3000/guilds/${guildId}`);

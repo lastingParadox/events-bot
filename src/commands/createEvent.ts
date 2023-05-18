@@ -144,7 +144,7 @@ export class EventCommand {
             .setColor("#FFA700")
             .setFooter({
                 text: `${member.displayName || "User"} suggested an event.`,
-                iconURL: member.avatarURL() as string,
+                iconURL: member.displayAvatarURL() as string,
             })
             .setTitle(title)
             .addFields({ name: "Description", value: description })
@@ -177,8 +177,13 @@ export class EventCommand {
         });
 
         const eventJson = await response.json();
-        console.log(`Created Event ${eventJson.title} in guild ${interaction.guild?.id}`);
+        console.log(
+            `Created event ${eventJson.title} in guild ${
+                interaction.guild?.id || ""
+            }`
+        );
 
         await message.react("✅");
+        await message.react("❌");
     }
 }
