@@ -113,7 +113,10 @@ export class EventReact {
 
         if (typeof event === "undefined") return;
 
-        if (user.id !== event.authorId) {
+        if (
+            user.id !== event.authorId &&
+            user.id !== reaction.message.guild?.ownerId
+        ) {
             await reaction.message.reactions
                 .resolve("❌")
                 ?.users.remove(user.id);
