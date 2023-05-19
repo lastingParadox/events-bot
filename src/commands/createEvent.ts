@@ -138,6 +138,14 @@ export class EventCommand {
                 .add(Math.trunc((timeLength % 1) * 60), "minute");
         else endTime = startTime.add(timeLength, "hour");
 
+        if (startTime.isSame(endTime)) {
+            await interaction.reply({
+                content: "The start time cannot be the end time.",
+                ephemeral: true,
+            });
+            return;
+        }
+
         const member = interaction.member as GuildMember;
 
         const embed = new EmbedBuilder()
@@ -147,17 +155,23 @@ export class EventCommand {
                 iconURL: member.displayAvatarURL() as string,
             })
             .setTitle(title)
-            .addFields({ name: "Description", value: description })
-            .addFields({
-                name: "Start Date",
-                value: `<t:${startTime.unix()}:D>`,
-                inline: true,
-            })
-            .addFields({
-                name: "Time Range",
-                value: `<t:${startTime.unix()}:t> - <t:${endTime.unix()}:t>`,
-                inline: true,
-            });
+            .addFields(
+                { name: "Description", value: description },
+                {
+                    name: "Start Date",
+                    value: `<t:${startTime.unix()}:D>`,
+                    inline: true,
+                },
+                {
+                    name: "Time Range",
+                    value: `<t:${startTime.unix()}:t> - <t:${endTime.unix()}:t>`,
+                    inline: true,
+                },
+                {
+                    name: "Expiry Time",
+                    value: `<t:${now.add(12, "hour").unix()}:t>`,
+                }
+            );
 
         await interaction.reply({ embeds: [embed] });
 
@@ -175,6 +189,26 @@ export class EventCommand {
                 location: "Default Location",
             }),
         });
+
+        // After 12 hours, delete message
+        setTimeout(
+            () =>
+                interaction.channel?.messages
+                    .fetch(message.id)
+                    .then(async (fetchedMessage) => {
+                        await fetchedMessage.delete();
+                        console.log(
+                            `Removed event suggestion ${title} in guild ${
+                                interaction.guild?.id || ""
+                            }`
+                        );
+                    })
+                    .catch((err) => {
+                        if (err.httpStatus !== 404) console.log(err);
+                        return;
+                    }),
+            86436000
+        );
 
         const eventJson = await response.json();
         console.log(

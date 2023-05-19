@@ -16,6 +16,7 @@ const messageSchema: Schema = new Schema({
     endTime: { type: Date, required: true },
     title: { type: String, required: true },
     description: { type: String },
+    expireAt: { type: Date, default: new Date(), expires: 43200 },
 });
 
 const Message = model<IMessage>("Message", messageSchema);
